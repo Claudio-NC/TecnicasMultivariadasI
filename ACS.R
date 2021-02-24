@@ -286,3 +286,6 @@ summary(res.ca,nb.dec = 3, ncp = 2)    # nb.dec=numero de decimales, ncp=numero 
 # Primera forma - usando plot.CA de FactoMineR
 #---------------------------------------------
 plot.CA(res.ca) # Mapa Simétrico
+
+# dicion temporal
+
