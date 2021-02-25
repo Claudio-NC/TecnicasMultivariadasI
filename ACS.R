@@ -237,6 +237,7 @@ summary(res.ca,nb.dec = 3, ncp = 2)    # nb.dec=numero de decimales, ncp=numero 
 # Contribución Relativa (cos2) 
 # Inercia                      # x1000
 
+
 # Interpretación de la Contribución Absoluta (ctr)
 #-------------------------------------------------
 # Por ejemplo: para la fila BAJO y la dimensión 1 se tiene 
@@ -284,8 +285,260 @@ summary(res.ca,nb.dec = 3, ncp = 2)    # nb.dec=numero de decimales, ncp=numero 
 #Representación gráfica de los datos en las dos dimensiones
 
 # Primera forma - usando plot.CA de FactoMineR
-#---------------------------------------------
 plot.CA(res.ca) # Mapa Simétrico
+plot.CA(res.ca, axes = c(1,2), col.row = "darkgreen", col.col = "red")
+plot.CA(res.ca,mass=c(T,T))
 
-# Edicion temporal
+# Segunda forma - usando fviz_ca_biplot de factoextra
+fviz_ca_biplot(res.ca, repel = T)
+fviz_ca_biplot(res.ca, repel = T) + theme_minimal()
+fviz_ca_biplot(res.ca, repel = T) + theme_light()
+fviz_ca_biplot(res.ca, repel = T) + theme_void()
+fviz_ca_biplot(res.ca, repel = T) + theme_test()
+
+
+
+#--------------------------------------------#
+#       8.- Gráficos de contribuciones       #
+#--------------------------------------------#
+
+# Contribuciones absolutas
+#-------------------------
+row <- get_ca_row(res.ca); row
+str(row)
+col <- get_ca_col(res.ca); col
+
+head(row$contrib)
+head(col$contrib)
+# grafico de contribuciones absolutas por filas
+fviz_contrib(res.ca, choice = "row", axes = 1)
+fviz_contrib(res.ca, choice = "row", axes = 2)
+# grafico de contribuciones absolutas por columnas
+fviz_contrib(res.ca, choice = "col", axes = 1)
+fviz_contrib(res.ca, choice = "col", axes = 2)
+
+# Contribuciones relativas de cada dimensión
+#-------------------------------------------
+head(row$cos2)
+head(col$cos2)
+# Grafico de contribuciones relativas por fila
+fviz_cos2(res.ca, choice = "row", axes = 1)
+fviz_cos2(res.ca, choice = "row", axes = 2)
+# Grafico de contribuciones relativas por columna
+fviz_cos2(res.ca, choice = "col", axes = 1)
+fviz_cos2(res.ca, choice = "col", axes = 2)
+
+# Coordenadas de las Dimensiones para filas y columnas 
+#-----------------------------------------------------
+head(row$coord) 
+head(col$coord)
+
+
+#--------------------------------------------------------------#
+#       9.- Significancia de asociacion filas y columnas       #
+#--------------------------------------------------------------#
+
+# Significancia de la asociación entre filas y columnas
+eig <- factoextra::get_eigenvalue(res.ca)
+eig
+
+trace <- sum(eig[,1])  ; trace  # trace = Inercia Total
+cor.coef <- sqrt(trace)
+cor.coef
+# Como regla, un valor por encima de 0.2 indica 
+# una correlación que puede ser considerada importante
+# (Bendixen 1995, 576; Healey 2013, 289-290).
+
+
+# Relacion Chi Cuadrado - Inercia
+#--------------------------------
+# ChiCuadrado = Traza * (Total de Tabla)
+chi = trace*500
+chi
+
+prueba<-chisq.test(datos.acs)
+prueba
+# IT= chi /500; IT
+
+
+#-----------------------------------------------------------------#
+#       10.- ANALISIS DE CORRESPONDENCIA SIMPLE CON PAQUETES      #
+#-----------------------------------------------------------------#
+
+# PAQUETE VEGAN
+#--------------
+library(vegan)
+corres2 <- cca(datos.acs)   
+summary(corres2)
+
+# PAQUETE ANACOR
+#--------------
+library(anacor)
+fit2 <- anacor(datos.acs,ndim=2)
+str(fit2)
+
+summary(fit2)
+plot(fit2,plot.type="jointplot")  # Grafico Biplot
+plot(fit2)
+fit2$row.scores  # coordenadas fila
+
+# Autovectores
+#-------------
+fit2$left.singvec
+fit2$right.singvec
+
+
+
+#--------------------------------------------------------------------------#
+#       11.- ANALISIS DE CORRESPONDENCIA SIMPLE CON UNA BASE DE DATOS      #
+#--------------------------------------------------------------------------#
+
+# Lectura de datos
+#-----------------
+library(foreign)
+datos <- read.spss("Riesgo_morosidad.sav", 
+                   use.value.labels = T,  
+                   to.data.frame=TRUE)
+str(datos)
+attach(datos)   
+
+# Tabla de contingencia
+#----------------------
+table(nrodepen)
+table(dpto)
+
+addmargins(table(dpto,nrodepen))
+
+datos.acs.b <- as.matrix(table(dpto,nrodepen))
+datos.acs.b
+
+# ACS
+#----
+library(FactoMineR) 
+res.ca.b <- CA(datos.acs.b,ncp=2,graph=FALSE)
+
+eig.val <- get_eigenvalue(res.ca.b)
+eig.val
+
+# Grafico de sedimentacion
+#-------------------------
+fviz_screeplot(res.ca.b)
+
+# Resumen de indicadores
+summary(res.ca.b,nb.dec = 3, ncp = 2) 
+
+# INERTIA
+# Lima Trujillo y Arequipa estan explicando la inercia----------> alejado del origen
+# La distribucion de la fila Piura es similar al perfil medio --> cercano al origen   
+# La distribucion de las columna 0 es similar al perfil medio --> cercano al origen   
+
+# CONTRIBUCION RELATIVA
+# No en todo los casos sumará 1, porque se estan reteniendo solo 2 dimensiones. 
+# Con 5 componentes si sumaría 1
+
+# CONCLUSION
+# Piura y 0 estarán cercano al origen
+
+# BIPLOT
+fviz_ca_biplot(res.ca.b, repel = T)
+
+
+#------------------------------------------#
+#       12.- VARIABLES SUPLEMENTARIAS      #
+#------------------------------------------#
+
+
+#             E1	E2	E3	E4	E5	E6	E7	E8	E9	Ideal
+# Precios	    16	17	18	19	16	45	15	19	18	45
+# Variedad	   8	15	18	17	27	20	 2	14	53	53
+# Rapidez	    20	20	23	21	29	20	18	19	25	29
+# Información	11	13	12	17	20	16	15	10	44	44
+# Trato	      28	25	25	22	30	26	24	22	26	30
+# Condiciones	21	21	20	24	27	22	18	21	24	27
+# Acceso	    21	21	21	23	26	15	16	18	21	26
+
+# Ideal es una variable creada con los valores mas altos por fila
+
+# Tabla de contigencia
+#---------------------
+datos_s.acs <- matrix(c(16,17,18,19,16,45,15,19,18,45,
+                        8,15,18,17,27,20, 2,14,53,53,
+                        20,20,23,21,29,20,18,19,25,29,
+                        11,13,12,17,20,16,15,10,44,44,
+                        28,25,25,22,30,26,24,22,26,30,
+                        21,21,20,24,27,22,18,21,24,27,
+                        21,21,21,23,26,15,16,18,21,26),
+                      nrow=7,byrow=T)
+datos_s.acs
+
+# Asignación de nombres a las filas y columnas de la tabla
+dimnames(datos_s.acs)<-list(Atributos=c("Precios", "Variedad", "Rapidez", 
+                                        "Información","Trato","Condiciones","Acceso")
+                            ,Empresa=c("Empresa 1","Empresa 2","Empresa 3",
+                                       "Empresa 4","Empresa 5","Empresa 6",
+                                       "Empresa 7","Empresa 8","Empresa 9",
+                                       "Ideal"))
+
+datos_s.acs
+addmargins(datos_s.acs)
+
+# Prueba de Independencia Chi-Cuadrado  
+chisq.test(datos_s.acs[,-10]) # Se trabaja con todas las columnas menos la suplementaria
+# Se Rechaza Ho
+
+# Grados de libertad de la Chi-cuadrado
+gl<-(7-1)*(9-1); gl
+
+
+# ACS con el paquete FactoMiner   
+#------------------------------
+library(FactoMineR) 
+res.ca.s <- CA(datos_s.acs,
+               ncp=2,
+               graph=FALSE,
+               col.sup = 10)
+
+# Scree Plot de los Autovalores
+#------------------------------
+get_eigenvalue(res.ca.s)
+# Con dos dimensiones se explica el 91.1 % de la inercia
+fviz_screeplot(res.ca.s, addlabels = TRUE, ylim = c(0, 80))
+
+
+# Interpretación de los Indicadores del ACS
+#------------------------------------------
+summary(res.ca.s,nb.dec = 3, ncp = 2) 
+# Aparece las coordenadas y contribucion relativa de la variable suplementaria
+
+# Biplot filas, columnas y columna suplementaria
+#-----------------------------------------------
+fviz_ca_biplot(res.ca.s, repel = T) + theme_light()
+
+
+# VARIABLES SUPLEMENTARIA CON LA DATA LUQUE
+#------------------------------------------
+datos<-matrix(c(30,30,155,
+                30,130,30,
+                80,30,30,
+                80,30,5,
+                80,130,155),ncol=3,byrow=T,
+              dimnames=list(c("A","B","C","D","Ideal"),
+                            c("Segmento 1","Segmento 2","Segmento 3")))
+datos
+
+# ACS con FactoMineR
+#-------------------
+# Prueba de Independencia
+chisq.test(datos[-5,])
+# Los segmentos son dependientes de las marcas (Pvalor<alfa)
+
+# ACS (2 dimensiones)
+library(FactoMineR)
+datos.acs.s <-CA(X=datos,ncp=2,row.sup=5,graph=F)
+
+summary(datos.acs.s)
+
+                            
+                            
+                            
 
